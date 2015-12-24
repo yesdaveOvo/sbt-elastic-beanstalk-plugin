@@ -11,6 +11,7 @@ libraryDependencies ++= Seq(
   "com.amazonaws" % "aws-java-sdk-elasticbeanstalk" % "1.10.43",
   "com.amazonaws" % "aws-java-sdk-s3" % "1.10.43")
 
+credentials += Credentials(Path.userHome / ".ivy2" / ".credentials")
 publishMavenStyle := true
 publishTo := {
   if (isSnapshot.value)
