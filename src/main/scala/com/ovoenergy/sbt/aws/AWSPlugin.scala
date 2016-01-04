@@ -15,8 +15,7 @@ trait AWSKeys {
   lazy val awsBucket = settingKey[String]("Name of the S3 bucket to publish docker configurations to")
   lazy val awsRegion = settingKey[Regions]("Region for the elastic beanstalk application and S3 bucket")
   lazy val awsStage = taskKey[File]("Creates the Dockerrun.aws.json file")
-  lazy val awsPublishVersion = taskKey[String]("Publishes the docker configuration to S3")
-  lazy val awsCreateVersion = taskKey[CreateApplicationVersionResult]("Creates an elastic beanstalk application version")
+  lazy val awsPublishVersion = taskKey[Option[CreateApplicationVersionResult]]("Publishes the docker configuration to S3")
 }
 
 object AWSPlugin extends AutoPlugin with NativePackagerKeys with DockerKeys with AWSKeys {
@@ -42,36 +41,33 @@ object AWSPlugin extends AutoPlugin with NativePackagerKeys with DockerKeys with
       val zipFile = awsStage.value
 
       val bucket = awsBucket.value
-      val client = new AmazonS3Client()
-      client.setRegion(Region.getRegion(awsRegion.value))
+      val s3Client = new AmazonS3Client()
+      s3Client.setRegion(Region.getRegion(awsRegion.value))
 
-      if (!client.doesBucketExist(bucket))
+      if (!s3Client.doesBucketExist(bucket)) {
         println(s"Bucket $bucket does not exist. Aborting")
+        None
+      }
       else {
-        client.putObject(bucket, key, zipFile)
+        s3Client.putObject(bucket, key, zipFile)
+
+        val ebClient = new AWSElasticBeanstalkClient()
+        ebClient.setRegion(Region.getRegion(awsRegion.value))
+        val applicationDescriptions = ebClient.describeApplications(new DescribeApplicationsRequest().withApplicationNames(packageName.value))
+
+        if (applicationDescriptions.getApplications.exists(_.getVersions contains version.value)) {
+          println("Version already exists in Elastic Beanstalk. Removing first...")
+          ebClient.deleteApplicationVersion(new DeleteApplicationVersionRequest(packageName.value, version.value))
+        }
+
+        val createRequest = new CreateApplicationVersionRequest()
+          .withApplicationName(packageName.value)
+          .withAutoCreateApplication(true)
+          .withVersionLabel(version.value)
+          .withProcess(true)
+          .withSourceBundle(new S3Location(awsBucket.value, key))
+        Some(ebClient.createApplicationVersion(createRequest))
       }
-
-      key
-    },
-
-    awsCreateVersion := {
-      val key = awsPublishVersion.value
-
-      val client = new AWSElasticBeanstalkClient()
-      client.setRegion(Region.getRegion(awsRegion.value))
-      val applicationDescriptions = client.describeApplications(new DescribeApplicationsRequest().withApplicationNames(packageName.value))
-
-      if (applicationDescriptions.getApplications.exists(_.getVersions contains version.value)) {
-        println("Version already exists in Elastic Beanstalk. Removing first...")
-        client.deleteApplicationVersion(new DeleteApplicationVersionRequest(packageName.value, version.value))
-      }
-      val createRequest = new CreateApplicationVersionRequest()
-        .withApplicationName(packageName.value)
-        .withAutoCreateApplication(true)
-        .withVersionLabel(version.value)
-        .withProcess(true)
-        .withSourceBundle(new S3Location(awsBucket.value, key))
-      client.createApplicationVersion(createRequest)
     }
   )
 
