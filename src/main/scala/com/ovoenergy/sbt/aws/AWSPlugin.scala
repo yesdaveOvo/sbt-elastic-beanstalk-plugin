@@ -62,9 +62,7 @@ object AWSPlugin extends AutoPlugin with NativePackagerKeys with DockerKeys with
 
         val createRequest = new CreateApplicationVersionRequest()
           .withApplicationName(packageName.value)
-          .withAutoCreateApplication(true)
           .withVersionLabel(version.value)
-          .withProcess(true)
           .withSourceBundle(new S3Location(awsBucket.value, key))
         Some(ebClient.createApplicationVersion(createRequest))
       }
