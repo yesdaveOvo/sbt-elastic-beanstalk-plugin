@@ -14,6 +14,8 @@ import scala.collection.JavaConversions._
 trait AWSKeys {
   lazy val awsVersion = settingKey[String]("Version number to tag release with in elastic beanstalk")
   lazy val awsBucket = settingKey[String]("Name of the S3 bucket to publish docker configurations to")
+  lazy val awsAuthBucket = settingKey[String]("Name of the S3 bucket containing the docker auth config")
+  lazy val awsAuthKey = settingKey[String]("Name of the S3 file containing the docker auth config")
   lazy val awsRegion = settingKey[Regions]("Region for the elastic beanstalk application and S3 bucket")
   lazy val awsStage = taskKey[File]("Creates the Dockerrun.aws.json file")
   lazy val awsPublish = taskKey[Option[CreateApplicationVersionResult]]("Publishes the docker configuration to S3")
@@ -28,6 +30,10 @@ object AWSPlugin extends AutoPlugin with NativePackagerKeys with DockerKeys with
 
   override lazy val projectSettings = Seq(
     awsVersion := version.value,
+
+    awsAuthBucket := awsBucket.value,
+
+    awsAuthKey := ".dockercfg",
 
     awsStage := {
       val jsonFile = target.value / "aws" / "Dockerrun.aws.json"
@@ -87,6 +93,10 @@ object AWSPlugin extends AutoPlugin with NativePackagerKeys with DockerKeys with
        |  "AWSEBDockerrunVersion": "1",
        |  "Image": {
        |    "Name": "$imageName"
+       |  },
+       |  "Authentication": {
+       |    "Bucket": "${awsAuthBucket.value}",
+       |    "Key": "${awsAuthKey.value}"
        |  },
        |  "Ports": [
        |    {
