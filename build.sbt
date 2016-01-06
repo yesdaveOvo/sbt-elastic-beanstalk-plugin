@@ -1,5 +1,5 @@
 name := "sbt-aws-plugin"
-version := "1.0.2"
+version := "1.0.3"
 organization := "com.ovoenergy"
 organizationName := "Ovo Energy"
 scalaVersion := "2.10.4"

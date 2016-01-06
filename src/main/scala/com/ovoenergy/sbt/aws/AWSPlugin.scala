@@ -12,10 +12,11 @@ import sbt._
 import scala.collection.JavaConversions._
 
 trait AWSKeys {
+  lazy val awsVersion = settingKey[String]("Version number to tag release with in elastic beanstalk")
   lazy val awsBucket = settingKey[String]("Name of the S3 bucket to publish docker configurations to")
   lazy val awsRegion = settingKey[Regions]("Region for the elastic beanstalk application and S3 bucket")
   lazy val awsStage = taskKey[File]("Creates the Dockerrun.aws.json file")
-  lazy val awsPublishVersion = taskKey[Option[CreateApplicationVersionResult]]("Publishes the docker configuration to S3")
+  lazy val awsPublish = taskKey[Option[CreateApplicationVersionResult]]("Publishes the docker configuration to S3")
 }
 
 object AWSPlugin extends AutoPlugin with NativePackagerKeys with DockerKeys with AWSKeys {
@@ -26,6 +27,8 @@ object AWSPlugin extends AutoPlugin with NativePackagerKeys with DockerKeys with
   object autoImport extends AWSKeys
 
   override lazy val projectSettings = Seq(
+    awsVersion := version.value,
+
     awsStage := {
       val jsonFile = target.value / "aws" / "Dockerrun.aws.json"
       val zipFile = target.value / "aws" / s"${packageName.value}-${version.value}.zip"
@@ -36,7 +39,7 @@ object AWSPlugin extends AutoPlugin with NativePackagerKeys with DockerKeys with
       zipFile
     },
 
-    awsPublishVersion := {
+    awsPublish := {
       val key = s"${packageName.value}/${version.value}.zip"
       val zipFile = awsStage.value
 
@@ -62,7 +65,8 @@ object AWSPlugin extends AutoPlugin with NativePackagerKeys with DockerKeys with
 
         val createRequest = new CreateApplicationVersionRequest()
           .withApplicationName(packageName.value)
-          .withVersionLabel(version.value)
+          .withDescription(version.value)
+          .withVersionLabel(awsVersion.value)
           .withSourceBundle(new S3Location(awsBucket.value, key))
         Some(ebClient.createApplicationVersion(createRequest))
       }
