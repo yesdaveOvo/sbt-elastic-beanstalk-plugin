@@ -2,7 +2,7 @@ name := "sbt-aws-plugin"
 version := "1.1.0"
 organization := "com.ovoenergy"
 organizationName := "OVO Energy"
-scalaVersion := "2.10.4"
+scalaVersion := "2.10.6"
 sbtPlugin := true
 
 addSbtPlugin("com.typesafe.sbt" % "sbt-native-packager" % "1.1.3")
