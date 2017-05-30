@@ -17,6 +17,7 @@ trait AWSKeys {
   lazy val awsAuthBucket = settingKey[String]("Name of the S3 bucket containing the docker auth config")
   lazy val awsAuthKey = settingKey[String]("Name of the S3 file containing the docker auth config")
   lazy val awsRegion = settingKey[Regions]("Region for the elastic beanstalk application and S3 bucket")
+  lazy val awsEbextensionsDir = settingKey[File]("Directory containing *.config files for advanced elastic beanstalk environment customisation. It's fine for this directory not to exist.")
   lazy val awsStage = taskKey[File]("Creates the Dockerrun.aws.json file")
   lazy val awsPublish = taskKey[Option[CreateApplicationVersionResult]]("Publishes the docker configuration to S3")
 }
@@ -35,13 +36,22 @@ object AWSPlugin extends AutoPlugin with NativePackagerKeys with DockerKeys with
 
     awsAuthKey := ".dockercfg",
 
+    awsEbextensionsDir := baseDirectory.value / "ebextensions",
+
     awsStage := {
       val jsonFile = target.value / "aws" / "Dockerrun.aws.json"
-      val zipFile = target.value / "aws" / s"${packageName.value}-${version.value}.zip"
       jsonFile.delete()
-      zipFile.delete()
       IO.write(jsonFile, dockerRunFile.value)
-      IO.zip(Seq(jsonFile -> "Dockerrun.aws.json"), zipFile)
+      val jsonFileMapping = jsonFile -> "Dockerrun.aws.json"
+
+      val ebextensionsFiles: Seq[java.io.File] = (awsEbextensionsDir.value * "*.config").get
+      val ebextensionsFileMappings = ebextensionsFiles.map(f => (f -> s".ebextensions/${f.name}"))
+
+      val zipFile = target.value / "aws" / s"${packageName.value}-${version.value}.zip"
+      zipFile.delete()
+
+      val zipContents = Seq(jsonFileMapping) ++ ebextensionsFileMappings 
+      IO.zip(zipContents, zipFile)
       zipFile
     },
 
