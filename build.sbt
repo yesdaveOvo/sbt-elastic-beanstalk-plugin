@@ -1,11 +1,11 @@
 name := "sbt-aws-plugin"
-version := "1.1.1"
+version := "1.2.0"
 organization := "com.ovoenergy"
 organizationName := "OVO Energy"
 scalaVersion := "2.10.6"
 sbtPlugin := true
 
-addSbtPlugin("com.typesafe.sbt" % "sbt-native-packager" % "1.1.3")
+addSbtPlugin("com.typesafe.sbt" % "sbt-native-packager" % "1.2.0")
 
 libraryDependencies ++= Seq(
   "com.amazonaws" % "aws-java-sdk-elasticbeanstalk" % "1.10.43",
