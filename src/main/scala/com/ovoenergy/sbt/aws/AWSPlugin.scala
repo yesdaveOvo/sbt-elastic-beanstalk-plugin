@@ -1,15 +1,15 @@
 package com.ovoenergy.sbt.aws
 
-import com.amazonaws.regions.{Regions, Region}
-import com.amazonaws.services.elasticbeanstalk.AWSElasticBeanstalkClient
+import com.amazonaws.regions.{Region, Regions}
+import com.amazonaws.services.elasticbeanstalk.AWSElasticBeanstalkClientBuilder
 import com.amazonaws.services.elasticbeanstalk.model._
-import com.amazonaws.services.s3.AmazonS3Client
+import com.amazonaws.services.s3.AmazonS3ClientBuilder
 import com.typesafe.sbt.packager.NativePackagerKeys
 import com.typesafe.sbt.packager.docker.{DockerKeys, DockerPlugin}
 import sbt.Keys._
 import sbt._
 
-import scala.collection.JavaConversions._
+import scala.collection.JavaConverters._
 
 trait AWSKeys {
   lazy val awsVersion = settingKey[String]("Version number to tag release with in elastic beanstalk")
@@ -24,7 +24,7 @@ trait AWSKeys {
 object AWSPlugin extends AutoPlugin with NativePackagerKeys with DockerKeys with AWSKeys {
   override def trigger = allRequirements
 
-  override def requires = DockerPlugin
+  override def requires: Plugins = DockerPlugin
 
   object autoImport extends AWSKeys
 
@@ -50,21 +50,20 @@ object AWSPlugin extends AutoPlugin with NativePackagerKeys with DockerKeys with
       val zipFile = awsStage.value
 
       val bucket = awsBucket.value
-      val s3Client = new AmazonS3Client()
+      val s3Client = AmazonS3ClientBuilder.defaultClient()
       s3Client.setRegion(Region.getRegion(awsRegion.value))
 
-      if (!s3Client.doesBucketExist(bucket)) {
+      if (!s3Client.doesBucketExistV2(bucket)) {
         println(s"Bucket $bucket does not exist. Aborting")
         None
       }
       else {
         s3Client.putObject(bucket, key, zipFile)
 
-        val ebClient = new AWSElasticBeanstalkClient()
-        ebClient.setRegion(Region.getRegion(awsRegion.value))
+        val ebClient = AWSElasticBeanstalkClientBuilder.standard().withRegion(awsRegion.value).build()
         val applicationDescriptions = ebClient.describeApplications(new DescribeApplicationsRequest().withApplicationNames(packageName.value))
 
-        if (applicationDescriptions.getApplications.exists(_.getVersions contains version.value)) {
+        if (applicationDescriptions.getApplications.asScala.exists(_.getVersions contains version.value)) {
           println("Version already exists in Elastic Beanstalk. Removing first...")
           ebClient.deleteApplicationVersion(new DeleteApplicationVersionRequest(packageName.value, version.value))
         }
@@ -90,19 +89,19 @@ object AWSPlugin extends AutoPlugin with NativePackagerKeys with DockerKeys with
     }
 
     s"""|{
-       |  "AWSEBDockerrunVersion": "1",
-       |  "Image": {
-       |    "Name": "$imageName"
-       |  },
-       |  "Authentication": {
-       |    "Bucket": "${awsAuthBucket.value}",
-       |    "Key": "${awsAuthKey.value}"
-       |  },
-       |  "Ports": [
-       |    {
-       |      "ContainerPort": "8080"
-       |    }
-       |  ]
-       |}""".stripMargin
+        |  "AWSEBDockerrunVersion": "1",
+        |  "Image": {
+        |    "Name": "$imageName"
+        |  },
+        |  "Authentication": {
+        |    "Bucket": "${awsAuthBucket.value}",
+        |    "Key": "${awsAuthKey.value}"
+        |  },
+        |  "Ports": [
+        |    {
+        |      "ContainerPort": "8080"
+        |    }
+        |  ]
+        |}""".stripMargin
   }
 }
