@@ -7,6 +7,7 @@ SBT Elastic Beanstalk Plugin lets you create AWS Elastic Beanstalk `Dockerrun.aw
 ## Installation
 Add the following to your project/plugins.sbt file:
 ```
+resolvers += Resolver.bintrayIvyRepo("ovotech", "sbt-plugins")
 addSbtPlugin("com.ovoenergy" % "sbt-elastic-beanstalk-plugin" % "2.0.0")
 ```
 This plugin depends on [sbt-native-packager](https://github.com/sbt/sbt-native-packager) so you do not need to add that plugin explicitly. However you will need to enable the packaging format you want in your `build.sbt`
