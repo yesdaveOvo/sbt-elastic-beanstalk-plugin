@@ -1,4 +1,4 @@
-package com.ovoenergy.sbt.aws
+package com.ovoenergy.sbt.eb
 
 import com.amazonaws.regions.{Region, Regions}
 import com.amazonaws.services.elasticbeanstalk.AWSElasticBeanstalkClientBuilder
@@ -11,7 +11,7 @@ import sbt._
 
 import scala.collection.JavaConverters._
 
-trait AWSKeys {
+trait ElasticBeanstalkKeys {
   lazy val awsVersion = settingKey[String]("Version number to tag release with in elastic beanstalk")
   lazy val awsBucket = settingKey[String]("Name of the S3 bucket to publish docker configurations to")
   lazy val awsAuthBucket = settingKey[String]("Name of the S3 bucket containing the docker auth config")
@@ -22,12 +22,12 @@ trait AWSKeys {
   lazy val awsPublish = taskKey[Option[CreateApplicationVersionResult]]("Publishes the docker configuration to S3")
 }
 
-object AWSPlugin extends AutoPlugin with NativePackagerKeys with DockerKeys with AWSKeys {
+object ElasticBeanstalkPlugin extends AutoPlugin with NativePackagerKeys with DockerKeys with ElasticBeanstalkKeys {
   override def trigger = allRequirements
 
   override def requires: Plugins = DockerPlugin
 
-  object autoImport extends AWSKeys
+  object autoImport extends ElasticBeanstalkKeys
 
   override lazy val projectSettings = Seq(
     awsVersion := version.value,

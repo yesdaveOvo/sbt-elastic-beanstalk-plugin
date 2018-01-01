@@ -1,13 +1,13 @@
-# SBT AWS Plugin
-[![CircleCI](https://img.shields.io/circleci/project/github/ovotech/sbt-aws-plugin.svg)](https://circleci.com/gh/ovotech/sbt-aws-plugin)
-[![Download](https://img.shields.io/bintray/v/ovotech/maven/validator.svg)](https://bintray.com/stuartizon/maven/validator/_latestVersion)
+# SBT Elastic Beanstalk Plugin
+[![CircleCI](https://img.shields.io/circleci/project/github/ovotech/sbt-elastic-beanstalk-plugin.svg)](https://circleci.com/gh/ovotech/sbt-elastic-beanstalk-plugin)
+[![Download](https://img.shields.io/bintray/v/ovotech/maven/sbt-elastic-beanstalk-plugin.svg)](https://bintray.com/ovotech/maven/sbt-elastic-beanstalk-plugin/_latestVersion)
 
-SBT AWS Plugin lets you create AWS Elastic Beanstalk `Dockerrun.aws.json` files and publish them to S3 from within your SBT build.
+SBT Elastic Beanstalk Plugin lets you create AWS Elastic Beanstalk `Dockerrun.aws.json` files and publish them to S3 from within your SBT build.
 
 ## Installation
 Add the following to your project/plugins.sbt file:
 ```
-addSbtPlugin("com.ovoenergy" % "sbt-aws-plugin" % "2.0.0")
+addSbtPlugin("com.ovoenergy" % "sbt-elastic-beanstalk-plugin" % "2.0.0")
 ```
 This plugin depends on [sbt-native-packager](https://github.com/sbt/sbt-native-packager) so you do not need to add that plugin explicitly. However you will need to enable the packaging format you want in your `build.sbt`
 ```
@@ -22,7 +22,7 @@ The plugin exposes two SBT tasks:
 Note you do not need to explicitly call `awsStage`. Calling `awsPublish` on its own will create the file before publishing to S3.
 
 ## Configuration
-SBT AWS Plugin exposes the following settings:
+SBT Elastic Beanstalk Plugin exposes the following settings:
 
 | Name               | Description                                                     | Notes                         |
 | ------------------ | --------------------------------------------------------------- | ----------------------------- |
