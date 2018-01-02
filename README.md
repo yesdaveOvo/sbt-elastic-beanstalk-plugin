@@ -1,6 +1,6 @@
 # SBT Elastic Beanstalk Plugin
 [![CircleCI](https://img.shields.io/circleci/project/github/ovotech/sbt-elastic-beanstalk-plugin.svg)](https://circleci.com/gh/ovotech/sbt-elastic-beanstalk-plugin)
-[![Download](https://img.shields.io/bintray/v/ovotech/sbt-plugins/sbt-elastic-beanstalk-plugin.svg)](https://bintray.com/ovotech/sbt-plugins/sbt-elastic-beanstalk-plugin/_latestVersion)
+[![Download](https://api.bintray.com/packages/ovotech/sbt-plugins/sbt-elastic-beanstalk-plugin/images/download.svg) ](https://bintray.com/ovotech/sbt-plugins/sbt-elastic-beanstalk-plugin/_latestVersion)
 
 SBT Elastic Beanstalk Plugin lets you create AWS Elastic Beanstalk `Dockerrun.aws.json` files and publish them to S3 from within your SBT build.
 
