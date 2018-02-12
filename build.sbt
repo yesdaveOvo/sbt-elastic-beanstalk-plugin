@@ -1,7 +1,6 @@
 name := "sbt-elastic-beanstalk-plugin"
 organization := "com.ovoenergy"
 organizationName := "OVO Energy"
-version := "2.0.0"
 scalaVersion := "2.12.4"
 sbtPlugin := true
 
