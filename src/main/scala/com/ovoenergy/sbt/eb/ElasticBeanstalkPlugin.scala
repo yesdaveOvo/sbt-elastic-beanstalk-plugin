@@ -1,6 +1,6 @@
 package com.ovoenergy.sbt.eb
 
-import com.amazonaws.regions.{Region, Regions}
+import com.amazonaws.regions.Regions
 import com.amazonaws.services.elasticbeanstalk.AWSElasticBeanstalkClientBuilder
 import com.amazonaws.services.elasticbeanstalk.model._
 import com.amazonaws.services.s3.AmazonS3ClientBuilder
@@ -50,7 +50,7 @@ object ElasticBeanstalkPlugin extends AutoPlugin with NativePackagerKeys with Do
       val zipFile = target.value / "aws" / s"${packageName.value}-${version.value}.zip"
       zipFile.delete()
 
-      val zipContents = Seq(jsonFileMapping) ++ ebextensionsFileMappings 
+      val zipContents = Seq(jsonFileMapping) ++ ebextensionsFileMappings
       IO.zip(zipContents, zipFile)
       zipFile
     },
@@ -60,8 +60,8 @@ object ElasticBeanstalkPlugin extends AutoPlugin with NativePackagerKeys with Do
       val zipFile = awsStage.value
 
       val bucket = awsBucket.value
-      val s3Client = AmazonS3ClientBuilder.defaultClient()
-      s3Client.setRegion(Region.getRegion(awsRegion.value))
+
+      val s3Client = AmazonS3ClientBuilder.standard().withRegion(awsRegion.value).build()
 
       if (!s3Client.doesBucketExistV2(bucket)) {
         println(s"Bucket $bucket does not exist. Aborting")
