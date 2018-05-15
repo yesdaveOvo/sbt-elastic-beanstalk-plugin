@@ -4,6 +4,7 @@ import com.amazonaws.regions.Regions
 import com.amazonaws.services.elasticbeanstalk.AWSElasticBeanstalkClientBuilder
 import com.amazonaws.services.elasticbeanstalk.model._
 import com.amazonaws.services.s3.AmazonS3ClientBuilder
+import com.amazonaws.services.s3.model.PutObjectResult
 import com.typesafe.sbt.packager.NativePackagerKeys
 import com.typesafe.sbt.packager.docker.{DockerKeys, DockerPlugin}
 import sbt.Keys._
@@ -19,7 +20,8 @@ trait ElasticBeanstalkKeys {
   lazy val awsRegion = settingKey[Regions]("Region for the elastic beanstalk application and S3 bucket")
   lazy val awsEbextensionsDir = settingKey[File]("Directory containing *.config files for advanced elastic beanstalk environment customisation. It's fine for this directory not to exist.")
   lazy val awsStage = taskKey[File]("Creates the Dockerrun.aws.json file")
-  lazy val awsPublish = taskKey[Option[CreateApplicationVersionResult]]("Publishes the docker configuration to S3")
+  lazy val awsPublish = taskKey[Option[CreateApplicationVersionResult]]("Publishes the docker configuration to S3 and create a beanstalk application version")
+  lazy val awsS3UploadWithLatest = taskKey[Option[PutObjectResult]]("Upload the docker configuration to S3 without creating an application version")
 }
 
 object ElasticBeanstalkPlugin extends AutoPlugin with NativePackagerKeys with DockerKeys with ElasticBeanstalkKeys {
@@ -84,6 +86,27 @@ object ElasticBeanstalkPlugin extends AutoPlugin with NativePackagerKeys with Do
           .withVersionLabel(awsVersion.value)
           .withSourceBundle(new S3Location(awsBucket.value, key))
         Some(ebClient.createApplicationVersion(createRequest))
+      }
+    },
+
+    awsS3UploadWithLatest := {
+      val key = s"${packageName.value}/${version.value}.zip"
+      val keyLastest = s"${packageName.value}/latest.zip"
+
+      val zipFile = awsStage.value
+
+      val bucket = awsBucket.value
+
+      val s3Client = AmazonS3ClientBuilder.standard().withRegion(awsRegion.value).build()
+
+      if (!s3Client.doesBucketExistV2(bucket)) {
+        println(s"Bucket $bucket does not exist. Aborting")
+        None
+      }
+      else {
+        s3Client.putObject(bucket, key, zipFile)
+        val latest = s3Client.putObject(bucket, keyLastest, zipFile)
+        Some(latest)
       }
     }
   )
