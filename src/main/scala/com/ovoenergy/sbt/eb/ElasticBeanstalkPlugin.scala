@@ -18,8 +18,8 @@ trait ElasticBeanstalkKeys {
   lazy val awsAuthBucket = settingKey[String]("Name of the S3 bucket containing the docker auth config")
   lazy val awsAuthKey = settingKey[String]("Name of the S3 file containing the docker auth config")
   lazy val awsRegion = settingKey[Regions]("Region for the elastic beanstalk application and S3 bucket")
-  lazy val awsS3ArchiveName = settingKey[String]("Name of the docker configuration file name that will be uploaded to S3 ")
-  lazy val awsEbextensionsDir = settingKey[File]("Directory containing *.config files for advanced elastic beanstalk environment customisation. It's fine for this directory not to exist.")
+  lazy val awsS3ArchiveName = settingKey[Option[String]]("Name of the docker configuration file name that will be uploaded to S3")
+  lazy val awsEbextensionsDir = settingKey[File]("Directory containing *.config files for advanced elastic beanstalk environment customisation. It's fine for this directory not to exist")
   lazy val awsStage = taskKey[File]("Creates the Dockerrun.aws.json file")
   lazy val awsPublish = taskKey[Option[CreateApplicationVersionResult]]("Publishes the docker configuration to S3 and create a beanstalk application version")
   lazy val awsS3Upload = taskKey[Option[PutObjectResult]]("Upload the docker configuration to S3 without creating an application version")
@@ -39,7 +39,7 @@ object ElasticBeanstalkPlugin extends AutoPlugin with NativePackagerKeys with Do
 
     awsAuthKey := ".dockercfg",
 
-    awsS3ArchiveName := "",
+    awsS3ArchiveName := None,
 
     awsEbextensionsDir := baseDirectory.value / "ebextensions",
 
@@ -93,7 +93,7 @@ object ElasticBeanstalkPlugin extends AutoPlugin with NativePackagerKeys with Do
     },
 
     awsS3Upload := {
-      val archiveName = if (awsS3ArchiveName.value.isEmpty)  version.value else awsS3ArchiveName.value
+      val archiveName = awsS3ArchiveName.value.getOrElse(version.value)
       val key = s"${packageName.value}/${archiveName}.zip"
 
       val zipFile = awsStage.value
