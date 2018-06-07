@@ -15,8 +15,7 @@ import scala.collection.JavaConverters._
 trait ElasticBeanstalkKeys {
   lazy val awsVersion = settingKey[String]("Version number to tag release with in elastic beanstalk")
   lazy val awsBucket = settingKey[String]("Name of the S3 bucket to publish docker configurations to")
-  lazy val awsAuthBucket = settingKey[String]("Name of the S3 bucket containing the docker auth config")
-  lazy val awsAuthKey = settingKey[String]("Name of the S3 file containing the docker auth config")
+  lazy val awsDockerAuthLocation = settingKey[Option[S3Location]]("Name of the S3 bucket & key containing a docker auth config, not required for ECR")
   lazy val awsRegion = settingKey[Regions]("Region for the elastic beanstalk application and S3 bucket")
   lazy val awsS3ArchiveName = settingKey[Option[String]]("Name of the docker configuration file name that will be uploaded to S3")
   lazy val awsEbextensionsDir = settingKey[File]("Directory containing *.config files for advanced elastic beanstalk environment customisation. It's fine for this directory not to exist")
@@ -26,19 +25,13 @@ trait ElasticBeanstalkKeys {
 }
 
 object ElasticBeanstalkPlugin extends AutoPlugin with NativePackagerKeys with DockerKeys with ElasticBeanstalkKeys {
-  override def trigger = allRequirements
-
+  override def trigger: PluginTrigger = allRequirements
   override def requires: Plugins = DockerPlugin
-
   object autoImport extends ElasticBeanstalkKeys
 
   override lazy val projectSettings = Seq(
+    awsDockerAuthLocation := None,
     awsVersion := version.value,
-
-    awsAuthBucket := awsBucket.value,
-
-    awsAuthKey := ".dockercfg",
-
     awsS3ArchiveName := None,
 
     awsEbextensionsDir := baseDirectory.value / "ebextensions",
@@ -50,7 +43,7 @@ object ElasticBeanstalkPlugin extends AutoPlugin with NativePackagerKeys with Do
       val jsonFileMapping = jsonFile -> "Dockerrun.aws.json"
 
       val ebextensionsFiles: Seq[java.io.File] = (awsEbextensionsDir.value * "*.config").get
-      val ebextensionsFileMappings = ebextensionsFiles.map(f => (f -> s".ebextensions/${f.name}"))
+      val ebextensionsFileMappings = ebextensionsFiles.map(f => f -> s".ebextensions/${f.name}")
 
       val zipFile = target.value / "aws" / s"${packageName.value}-${version.value}.zip"
       zipFile.delete()
@@ -63,10 +56,9 @@ object ElasticBeanstalkPlugin extends AutoPlugin with NativePackagerKeys with Do
     awsPublish := {
       val key = s"${packageName.value}/${version.value}.zip"
       val zipFile = awsStage.value
-
       val bucket = awsBucket.value
 
-      val s3Client = AmazonS3ClientBuilder.standard().withRegion(awsRegion.value).build()
+      val s3Client = AmazonS3ClientBuilder.standard.withRegion(awsRegion.value).build()
 
       if (!s3Client.doesBucketExistV2(bucket)) {
         println(s"Bucket $bucket does not exist. Aborting")
@@ -94,7 +86,7 @@ object ElasticBeanstalkPlugin extends AutoPlugin with NativePackagerKeys with Do
 
     awsS3Upload := {
       val archiveName = awsS3ArchiveName.value.getOrElse(version.value)
-      val key = s"${packageName.value}/${archiveName}.zip"
+      val key = s"${packageName.value}/$archiveName.zip"
 
       val zipFile = awsStage.value
 
@@ -115,12 +107,17 @@ object ElasticBeanstalkPlugin extends AutoPlugin with NativePackagerKeys with Do
 
   lazy val dockerRunFile: Def.Initialize[String] = Def.setting {
     val imageName = dockerRepository.value match {
-      case Some(repository) => s"$repository/${
-        packageName.value
-      }:${
-        version.value
-      }"
+      case Some(repository) => s"$repository/${packageName.value}:${version.value}"
       case None => packageName.value
+    }
+
+    val authJson = awsDockerAuthLocation.value.fold("") { location =>
+      s"""
+        |"Authentication": {
+        |  "Bucket": "${location.getS3Bucket}",
+        |  "Key": "${location.getS3Key}"
+        |},
+      """.stripMargin
     }
 
     s"""|{
@@ -128,10 +125,7 @@ object ElasticBeanstalkPlugin extends AutoPlugin with NativePackagerKeys with Do
         |  "Image": {
         |    "Name": "$imageName"
         |  },
-        |  "Authentication": {
-        |    "Bucket": "${awsAuthBucket.value}",
-        |    "Key": "${awsAuthKey.value}"
-        |  },
+        |  $authJson
         |  "Ports": [
         |    {
         |      "ContainerPort": "8080"

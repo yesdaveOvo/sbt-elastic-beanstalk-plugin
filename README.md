@@ -25,11 +25,10 @@ Note you do not need to explicitly call `awsStage`. Calling `awsPublish` on its 
 ## Configuration
 SBT Elastic Beanstalk Plugin exposes the following settings:
 
-| Name               | Description                                                     | Notes                         |
-| ------------------ | --------------------------------------------------------------- | ----------------------------- |
-| awsBucket          | Name of the S3 bucket to publish docker configurations to       | *mandatory*                   |
-| awsRegion          | Region for the elastic beanstalk application and S3 bucket      | *mandatory*                   |
-| awsVersion         | Version number to tag release with in elastic beanstalk         | defaults to the __version__   |
-| awsAuthBucket      | Name of the S3 bucket containing the docker auth config         | defaults to the __awsBucket__ |
-| awsAuthKey         | Name of the S3 file containing the docker auth config           | defaults to __.dockercfg__    |
-| awsEbextensionsDir | Directory containing \*.config files for advanced customisation | defaults to __ebextensions__  |
+| Name                  | Description                                                     | Notes                         |
+| ------------------    | --------------------------------------------------------------- | ----------------------------- |
+| awsBucket             | Name of the S3 bucket to publish docker configurations to       | *mandatory*                   |
+| awsRegion             | Region for the elastic beanstalk application and S3 bucket      | *mandatory*                   |
+| awsVersion            | Version number to tag release with in elastic beanstalk         | defaults to the __version__   |
+| awsDockerAuthLocation | Name of the S3 bucket + key containing a docker auth config     | defaults to None              |
+| awsEbextensionsDir    | Directory containing \*.config files for advanced customisation | defaults to __ebextensions__  |
